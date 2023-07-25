@@ -1,71 +1,74 @@
-
-
-/*
-  Pin Configuration
-  Rain Drop      A0
-  Soil Humidity  A1
-  SDA            A4
-  SCL            A5
-  DHT11 Data     D2
-*/
-
-int result [5];           //Sensor result array
 #include <Wire.h>         //Including wire library
 #include <SFE_BMP180.h>   //Including BMP180 library
 #include <LiquidCrystal.h>
-#define ALTITUDE 3        //Altitude where I live (change this to your altitude)
-SFE_BMP180 pressure;      //Creating an object
 #include <DHT.h>          //Including DHT11 library
+
 #define DHTPIN 8          //Define DHT11 digital pin
 #define DHTTYPE DHT11     //Define DHT TYPE which is DHT11
 DHT dht(DHTPIN, DHTTYPE); //Execute DHT11 library
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-const long A = 1000;     //Resistencia en oscuridad KO
-const int B = 15;        //Resistencia a la luz (10 Lux) KO
-const int Rc = 10;       //Resistencia calibracion KO
-const int LDRPin = A2;   //Pin del LDR
 
+#define Psoil A0
+#define Prain A1
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+#define LDRPin A2         //Pin del LDR
+#define A 1000            //Resistencia en oscuridad KO
+#define B 15              //Resistencia a la luz (10 Lux) KO
+#define Rc 10             //Resistencia calibracion KO
 int V;
 int ilum;
 
+int result [5];           //Sensor result array
+
+#define ALTITUDE 3        //Altitude where I live (change this to your altitude)
+SFE_BMP180 pressure;      //Creating an object
 
 void setup() {
   lcd.begin(16, 2);  // set up the LCD's number of columns and rows:
   Serial.begin(9600);       //Starting serial communication
   Serial.println("Program started");
   //Analog setup
-  pinMode(A0, INPUT);       //Soil
-  pinMode(A1, INPUT);       //Rain
+  pinMode(Psoil, INPUT);       //Soil
+  pinMode(Prain, INPUT);       //Rain
   //BMP180 Setup
-  if (pressure.begin())     //If initialization was successful, continue
-  { Serial.println("BMP180 init success");
-    Serial.print("AWS :");
-    Serial.print("\t");
-    Serial.print("Rain Drop\t");
-    Serial.print("Soil Hum\t");
-    Serial.print("Pressure \t");
-    Serial.print("Air Hum\t");
-    Serial.print("\t");
-    Serial.println("Temp \t");
+  if (pressure.begin()){       //If initialization was successful, continue
+    Serial.println("BMP180 init success");
   }
-  else                       //Else, stop code forever
+  else                         //Else, stop code forever
   {
     Serial.println("BMP180 init fail");
     while (1);
   }
-
+  //DHT Setup
+  if (dht.begin()){            //If initialization was successful, continue
+    Serial.print(DHTTYPE);
+    Serial.println("init success");
+  }
+  else{                        //Else, stop code forever
+    Serial.print(DHTTYPE);
+    Serial.println("DHT init fail");
+    while (1);
+  }
   //DHT11 setup
-  dht.begin();
+  
+  Serial.print("AWS :");
+  Serial.print("\t");
+  Serial.print("Rain Drop\t");
+  Serial.print("Soil Hum\t");
+  Serial.print("Pressure \t");
+  Serial.print("Air Hum\t");
+  Serial.print("\t");
+  Serial.println("Temp \t");
 }
 
 void loop() {
-
   //analog setup
   V = analogRead(LDRPin);
   //ilum = ((long)(1024-V)*A*10)/((long)B*Rc*V);    //usar si
   ilum = ((long)V * A * 10) / ((long)B * Rc * (1024 - V)); //usar si
-  int A_Rain = analogRead(A0);
-  int A_Soil = analogRead(A1);
+  int A_Rain = analogRead(Psoil);
+  int A_Soil = analogRead(Prain);
   A_Rain = map(A_Rain, 800, 1023, 100, 0);
   A_Soil = map(A_Soil, 400, 1023, 100, 0);
   result[0] = A_Soil;
@@ -123,5 +126,4 @@ void loop() {
   lcd.print(ilum);
 
   delay(5000);
-
 }
